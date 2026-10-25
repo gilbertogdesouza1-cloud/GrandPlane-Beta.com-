@@ -2,180 +2,396 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Grand Plane BETA</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Grand Plane — Voo Livre 3D</title>
 <style>
-*{box-sizing:border-box}
-body{margin:0;overflow:hidden;background:#86c9ff;font-family:Arial}
-#hud{position:fixed;top:12px;left:12px;color:white;
-background:#102536dd;padding:14px;border-radius:12px;
-z-index:2;line-height:1.7}
-#controls{position:fixed;bottom:20px;left:50%;
-transform:translateX(-50%);display:flex;gap:8px;z-index:2}
-button{padding:13px 17px;border:0;border-radius:10px;
-background:#173c53;color:white;font-weight:bold;cursor:pointer}
-button:hover{background:#2478a1}
-#msg{color:#a8f5b4}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:Arial,sans-serif;background:#78bde8}canvas{display:block}
+#hud{position:fixed;inset:0;pointer-events:none;color:#fff;text-shadow:0 2px 4px #123}
+.panel{background:#09243dcc;border:1px solid #ffffff40;border-radius:12px;padding:10px 14px;backdrop-filter:blur(5px)}
+#logo{position:absolute;top:14px;left:14px;font-weight:900;font-size:18px}
+#stats{position:absolute;top:14px;right:14px;display:flex;gap:8px}.stat{text-align:center;min-width:88px}.label{font-size:10px;letter-spacing:1px;opacity:.8}.val{font-size:21px;font-weight:800;margin-top:4px}
+#help{position:absolute;left:14px;bottom:14px;font-size:12px;line-height:1.7}
+#soundBtn{position:absolute;top:68px;left:14px;width:auto;padding:9px 12px;font-size:13px;pointer-events:auto;background:#09243dcc;color:#fff;border:1px solid #ffffff55}
+@media(max-width:600px){#soundBtn{top:112px}#viewBtns{top:158px!important}#modeLabel{top:210px!important}}
+#mapbox{position:absolute;right:14px;bottom:14px;width:150px;height:150px;border:2px solid #ffffffaa;border-radius:50%;overflow:hidden;background:#123b53aa}
+#map{width:100%;height:100%}
+#msg{position:absolute;top:22%;left:50%;transform:translateX(-50%);font-size:clamp(20px,3vw,38px);font-weight:900;text-align:center;white-space:nowrap}
+#msg small{display:block;font-size:13px;margin-top:7px;font-weight:500}
+#cover{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#081a35a8;z-index:3;color:white}
+.card{width:min(480px,92vw);background:#071b2cf2;border:1px solid #ffffff35;border-radius:20px;padding:28px;box-shadow:0 20px 60px #0006}
+h1{margin:0 0 10px;font-size:32px}.desc{color:#c3e0f2;line-height:1.5}.keys{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:18px 0;font-size:13px}.keys div{padding:10px;background:#ffffff10;border-radius:8px}button{width:100%;padding:14px;border:0;border-radius:11px;background:#39df8b;color:#052519;font-weight:900;font-size:17px;cursor:pointer}
+@media(max-width:600px){#stats{top:62px;left:10px;right:10px;justify-content:space-between}.stat{min-width:0;padding:8px}.val{font-size:16px}#mapbox{width:105px;height:105px}#help{font-size:10px}}
 </style>
 </head>
 <body>
 <div id="hud">
-  <b>✈ GRAND PLANE <span style="color:#7dff9a">BETA</span></b><br>
-  Velocidade: <span id="speed">0</span> km/h<br>
-  Altitude: <span id="alt">0</span> m<br>
-  Estado: <span id="msg">Pronto para decolar</span><br>
-  <small>W/S: acelerar e frear · A/D: virar · Espaço: subir</small>
+ <div id="logo" class="panel">✈ GRAND PLANE <span style="color:#48ef9b">3D</span></div>
+ <button id="soundBtn" type="button">🔊 SOM: LIGADO</button>
+ <div id="viewBtns" style="position:absolute;top:112px;left:14px;display:flex;gap:7px;pointer-events:auto;flex-wrap:wrap;max-width:260px"><button id="cockpitBtn" type="button" style="width:auto;padding:9px 12px;font-size:12px;background:#09243dcc;color:#fff;border:1px solid #ffffff55">C · COCKPIT</button><button id="exitBtn" type="button" style="width:auto;padding:9px 12px;font-size:12px;background:#09243dcc;color:#fff;border:1px solid #ffffff55">E · SAIR / ENTRAR</button></div>
+ <div id="modeLabel" class="panel" style="position:absolute;top:164px;left:14px;font-size:12px">CÂMERA EXTERNA</div>
+ <div id="stats">
+  <div class="panel stat"><div class="label">VELOCIDADE</div><div class="val"><span id="speed">0</span> <small style="font-size:10px">km/h</small></div></div>
+  <div class="panel stat"><div class="label">ALTITUDE</div><div class="val"><span id="alt">80</span> <small style="font-size:10px">m</small></div></div>
+  <div class="panel stat"><div class="label">DIREÇÃO</div><div class="val"><span id="heading">000</span>°</div></div>
+ </div>
+ <div id="msg">CARREGANDO O MUNDO 3D<small>O voo começa no céu assim que você clicar em iniciar</small></div>
+ <div id="help" class="panel"><b>CONTROLES</b><br><b>W / S</b> — acelerar / frear<br><b>↑ / ↓</b> — subir / descer<br><b>← / →</b> — virar<br><b>A / D</b> — inclinar as asas<br><b>Espaço</b> — impulso extra · <b>G</b> — trem · <b>C</b> cockpit · <b>E</b> sair/entrar · <b>R</b> reiniciar</div>
+ <div id="mapbox"><canvas id="map" width="300" height="300"></canvas></div>
 </div>
-<div id="controls">
-  <button onclick="keys.a=true">◀ VIRAR</button>
-  <button onclick="keys.w=true">ACELERAR</button>
-  <button onclick="keys.space=true">SUBIR</button>
-  <button onclick="keys.d=true">VIRAR ▶</button>
-</div>
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<div id="cover"><div class="card">
+ <h1>✈ Grand Plane</h1>
+ <div class="desc">Grand Plane: pilote por montanhas, explore uma cidade viva com carros, pedestres, ciclistas, lanchonetes, restaurantes, postos e uma rodovia, use dois aeroportos, pouse, sobreviva a acidentes e caminhe fora do avião!</div>
+ <div class="keys"><div><b>W / S</b><br>Acelerar / frear</div><div><b>↑ / ↓</b><br>Subir / descer</div><div><b>← / →</b><br>Virar</div><div><b>A / D</b><br>Inclinar o avião</div><div><b>C</b><br>Cockpit / câmera externa</div><div><b>E</b><br>Sair / entrar no avião no chão</div></div>
+ <button id="start">INICIAR VOO</button>
+ <p style="font-size:11px;color:#8eafc4;text-align:center;margin-bottom:0">Se o 3D não carregar, o jogo tenta automaticamente o modo leve.</p>
+</div></div>
 <script>
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x86c9ff);
-scene.fog = new THREE.Fog(0x86c9ff, 500, 2400);
-
-const camera = new THREE.PerspectiveCamera(
-  70, innerWidth/innerHeight, 0.1, 3000
-);
-const renderer = new THREE.WebGLRenderer({antialias:true});
-renderer.setSize(innerWidth,innerHeight);
-renderer.setPixelRatio(Math.min(devicePixelRatio,2));
-renderer.shadowMap.enabled = true;
-document.body.appendChild(renderer.domElement);
-
-scene.add(new THREE.HemisphereLight(0xffffff,0x476c36,2));
-const sun = new THREE.DirectionalLight(0xffffff,2);
-sun.position.set(150,300,100);
-scene.add(sun);
-
-function material(color){return new THREE.MeshStandardMaterial({color});}
-function box(x,y,z,sx,sy,sz,color){
- const m=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),material(color));
- m.position.set(x,y,z);scene.add(m);return m;
+function loadThree(urls, index=0){
+ if(index>=urls.length){ bootFallback(); return; }
+ const script=document.createElement('script');
+ let settled=false;
+ const timer=setTimeout(()=>{if(!settled){settled=true;script.remove();loadThree(urls,index+1)}},3500);
+ script.src=urls[index];
+ script.onload=()=>{if(settled)return;settled=true;clearTimeout(timer);try{bootGame()}catch(err){console.error('Erro no jogo 3D:',err);bootFallback()}};
+ script.onerror=()=>{if(settled)return;settled=true;clearTimeout(timer);loadThree(urls,index+1)};
+ document.head.appendChild(script);
 }
-
-// Mundo completamente plano e verde
-box(0,-2,0,2400,4,2400,0x55a844);
-
-// Estradas
-function road(x,z,w,d){
- box(x,0,z,w,0.15,d,0x333a40);
- for(let i=-Math.floor(w/2)+10;i<w/2;i+=22)
-   box(x+i,0.09,z,2,0.03,d,0xffffff);
+function bootFallback(){
+ if(document.getElementById('fallbackCanvas'))return;
+ const cover=document.getElementById('cover');cover.style.display='flex';
+ cover.innerHTML='<div class="card"><h1>✈ Grand Plane</h1><div class="desc">O modo 3D não carregou nesta conexão, então abrimos o modo leve 2D para você conseguir jogar mesmo assim. Os controles são os mesmos!</div><div class="keys"><div><b>W / ↑</b><br>Acelerar / subir</div><div><b>S / ↓</b><br>Frear / descer</div><div><b>← / →</b><br>Virar</div><div><b>G</b><br>Trem de pouso</div></div><button id="fallbackStart">JOGAR NO MODO LEVE</button><p style="font-size:11px;color:#8eafc4;text-align:center;margin-bottom:0">Modo de emergência: não precisa baixar gráficos externos.</p></div>';
+ const canvas=document.createElement('canvas');canvas.id='fallbackCanvas';canvas.style.cssText='position:fixed;inset:0;width:100%;height:100%;display:block;z-index:1';document.body.appendChild(canvas);
+ const c=canvas.getContext('2d');let w=innerWidth,h=innerHeight,dpr=Math.min(devicePixelRatio||1,1.5);function resize(){w=innerWidth;h=innerHeight;canvas.width=w*dpr;canvas.height=h*dpr;canvas.style.width=w+'px';canvas.style.height=h+'px';c.setTransform(dpr,0,0,dpr,0,0)}resize();addEventListener('resize',resize);
+ let started=false,speed=100,alt=140,heading=0,gear=false,grounded=false,crashed=false,marks=[];const down={};
+ addEventListener('keydown',e=>{down[e.code]=true;if(e.code==='KeyG')gear=!gear;if(e.code==='KeyR'){alt=140;speed=100;heading=0;grounded=false;crashed=false;marks=[]}});addEventListener('keyup',e=>down[e.code]=false);
+ document.getElementById('fallbackStart').onclick=()=>{started=true;cover.style.display='none'};
+ function draw(){requestAnimationFrame(draw);c.clearRect(0,0,w,h);let sky=c.createLinearGradient(0,0,0,h);sky.addColorStop(0,'#69b9ec');sky.addColorStop(1,'#d8f1ff');c.fillStyle=sky;c.fillRect(0,0,w,h);c.fillStyle='#79ad5a';c.fillRect(0,h*.63,w,h*.37);
+ // simple distant hills
+ c.fillStyle='#629b50';c.beginPath();c.moveTo(0,h*.66);for(let x=0;x<=w;x+=25)c.lineTo(x,h*.62+Math.sin(x*.009)*18+Math.sin(x*.023)*8);c.lineTo(w,h);c.lineTo(0,h);c.fill();
+ // Cidade pequena vista de cima: ruas, casinhas, carrinhos e pedestres.
+ c.save();c.translate(w*.68,h*.68);c.scale(Math.min(w/1000,1),Math.min(h/700,1));c.fillStyle='#454b52';for(let x=-190;x<=190;x+=75)c.fillRect(x,-105,13,220);for(let y=-95;y<=95;y+=65)c.fillRect(-210,y,430,13);c.fillStyle='#f5f0d9';for(let x=-185;x<=190;x+=75)for(let y=-100;y<=95;y+=65){c.fillStyle=['#f0d2a2','#d8e8ef','#e6b5a8','#c9dfb1'][(Math.floor((x+200)/75)+Math.floor((y+100)/65))%4];c.fillRect(x+17,y+14,35,28);c.fillStyle='#8b4b3b';c.fillRect(x+15,y+10,39,6)}for(let i=0;i<6;i++){let x=-170+((performance.now()*.025+i*70)%340);c.fillStyle=['#e84c3d','#f1f3f4','#2878c8','#f2c744'][i%4];c.fillRect(x,-48+(i%3)*65,13,7)}for(let i=0;i<12;i++){let x=-195+(i*37)%390,y=-88+(i%4)*58;c.fillStyle='#f4c49a';c.beginPath();c.arc(x,y,2.5,0,Math.PI*2);c.fill();c.fillStyle='#3276ad';c.fillRect(x-2,y+2,4,6)}c.restore();
+ // Rodovia e comércios também aparecem no modo leve, caso o 3D não esteja disponível.
+ c.save();c.translate(w*.84,h*.66);c.fillStyle='#42484f';c.fillRect(-w*.035,-h*.4,w*.07,h*.8);c.strokeStyle='#f7f1d5';c.lineWidth=3;c.setLineDash([18,16]);c.beginPath();c.moveTo(0,-h*.4);c.lineTo(0,h*.4);c.stroke();c.setLineDash([]);
+ const shops=[['LANCHES','#e58b25'],['BURGER','#c74a35'],['PASTEL','#f0c76a'],['RESTAURANTE','#28684a'],['POSTO','#d72635']];
+ for(let i=0;i<shops.length;i++){let sy=-h*.34+i*Math.min(48,h*.12);c.fillStyle=shops[i][1];c.fillRect(-w*.12,sy,w*.075,24);c.fillStyle='#fff';c.font='bold 10px Arial';c.fillText(shops[i][0],-w*.118,sy+15)}
+ for(let i=0;i<5;i++){let cy=-h*.28+((performance.now()*.018+i*75)%(h*.56));c.fillStyle=['#e84c3d','#f1f3f4','#2878c8'][i%3];c.fillRect(-w*.018,cy,Math.max(8,w*.012),Math.max(14,h*.035));}
+ c.restore();
+ // Ciclistas esquemáticos nas ruas da cidade.
+ c.save();c.translate(w*.68,h*.68);c.scale(Math.min(w/1000,1),Math.min(h/700,1));for(let i=0;i<4;i++){let bx=-170+((performance.now()*.02+i*95)%330),by=-72+(i%3)*66;c.strokeStyle=['#2f8cde','#e75a4c','#37a56b','#e7a62d'][i];c.lineWidth=2;c.beginPath();c.arc(bx,by,5,0,Math.PI*2);c.arc(bx+13,by,5,0,Math.PI*2);c.moveTo(bx,by);c.lineTo(bx+7,by-9);c.lineTo(bx+13,by);c.lineTo(bx,by);c.stroke();c.beginPath();c.moveTo(bx+7,by-9);c.lineTo(bx+9,by-16);c.stroke();}c.restore();
+ // runway / landing field
+ c.save();c.translate(w*.72,h*.73);c.rotate(-.05);c.fillStyle='#343b43';c.fillRect(-w*.27,-10,w*.54,45);c.fillStyle='#fff';for(let x=-w*.24;x<w*.25;x+=45)c.fillRect(x,7,22,3);c.restore();
+ // airplane is held near center; terrain moves with flight state
+ c.save();c.translate(w*.48,h*.48+Math.max(-65,Math.min(85,(140-alt)*.35)));c.rotate(heading*.45);c.fillStyle='#f5f7f9';c.beginPath();c.moveTo(0,-36);c.lineTo(9,7);c.lineTo(34,20);c.lineTo(34,27);c.lineTo(7,22);c.lineTo(5,39);c.lineTo(14,46);c.lineTo(14,50);c.lineTo(0,47);c.lineTo(-14,50);c.lineTo(-14,46);c.lineTo(-5,39);c.lineTo(-7,22);c.lineTo(-34,27);c.lineTo(-34,20);c.lineTo(-9,7);c.closePath();c.fill();c.strokeStyle='#1d6eb0';c.lineWidth=3;c.stroke();c.restore();
+ if(started&&!crashed){if(down.KeyW)speed=Math.min(240,speed+1.4);if(down.KeyS)speed=Math.max(0,speed-2);if(down.ArrowUp)alt=Math.min(500,alt+1.1);if(down.ArrowDown)alt=Math.max(0,alt-1.1);if(down.ArrowLeft||down.KeyA)heading=Math.max(-1.5,heading-.025);if(down.ArrowRight||down.KeyD)heading=Math.min(1.5,heading+.025);if(grounded){if(down.KeyW)grounded=false;else speed=Math.max(0,speed-.3)}else if(alt<8&&speed<155){alt=0;grounded=true;marks.push({x:w*.72,y:h*.73,life:1});}else if(alt<8&&speed>=155){crashed=true;}}
+ c.fillStyle='#08243c';c.font='bold 16px Arial';c.fillText('GRAND PLANE • MODO LEVE',18,30);c.font='14px Arial';c.fillText('Velocidade: '+Math.round(speed)+' km/h',18,56);c.fillText('Altitude: '+Math.round(alt)+' m',18,78);c.fillText('Trem: '+(gear?'BAIXADO':'RECOLHIDO')+' (G)',18,100);c.fillText('W/S: velocidade • ↑/↓: altitude • ←/→: virar • R: reiniciar',18,h-22);if(grounded){c.fillStyle='#fff';c.font='bold 25px Arial';c.fillText('POUSO! Acelere para decolar novamente.',w*.24,h*.25)}if(crashed){c.fillStyle='#fff';c.font='bold 30px Arial';c.fillText('IMPACTO! Pressione R para tentar novamente',w*.17,h*.25)} }
+ draw();
 }
-road(0,0,22,1100);
-road(250,0,12,800);
-road(125,0,270,12);
-road(250,0,12,800);
+function bootGame(){
+ if(document.getElementById('fallbackCanvas'))return;
+ (() => {
+const $=id=>document.getElementById(id);
+if(!window.THREE){$('msg').innerHTML='Não foi possível carregar o 3D<small>Verifique sua conexão com a internet e recarregue a página.</small>';return}
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x82c8f0);scene.fog=new THREE.Fog(0x82c8f0,1100,4300);
+const camera=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,.1,6500);
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.35));renderer.shadowMap.enabled=false;renderer.outputColorSpace=THREE.SRGBColorSpace;document.body.appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xe0f5ff,0x3b5936,2));
+const sun=new THREE.DirectionalLight(0xffefcf,2.5);sun.position.set(-400,900,300);sun.castShadow=false;scene.add(sun);
+const sea=new THREE.Mesh(new THREE.PlaneGeometry(10000,10000),new THREE.MeshStandardMaterial({color:0x087fac,roughness:.5}));sea.rotation.x=-Math.PI/2;sea.position.y=-18;scene.add(sea);
+function terrainH(x,z){
+ // Aeroportos e cidade em terreno plano; transição suave para as colinas fora da área urbana.
+ const cityDist=Math.hypot(x-405,z-260);
+ if(Math.hypot(x-60,z-40)<270 || Math.hypot(x+650,z+380)<270 || cityDist<430) return 0;
+ const r=Math.hypot(x,z), edge=Math.max(0,1-Math.pow(r/1350,4));
+ const hills=Math.sin(x*.0045)*Math.cos(z*.004)*13 + Math.sin((x+z)*.008)*5 + Math.cos(z*.012+x*.006)*3;
+ const blend=Math.min(1,Math.max(0,(cityDist-430)/140));
+ return Math.max(-10, hills*edge-4)*blend;
+}
+const N=76,S=2400,pos=[],col=[],idx=[];const low=new THREE.Color(0x347844),green=new THREE.Color(0x83b653),rock=new THREE.Color(0x87948b),snow=new THREE.Color(0xf4f5ee);
+for(let iz=0;iz<=N;iz++)for(let ix=0;ix<=N;ix++){let x=(ix/N-.5)*S,z=(iz/N-.5)*S,y=terrainH(x,z);pos.push(x,y,z);let c=y<4?new THREE.Color(0xb9ad78):y<70?low.clone().lerp(green,(y-4)/66):y<155?green.clone().lerp(rock,(y-70)/85):rock.clone().lerp(snow,Math.min(1,(y-155)/100));col.push(c.r,c.g,c.b);if(ix<N&&iz<N){let a=iz*(N+1)+ix,b=a+1,c1=a+N+1,d=c1+1;idx.push(a,c1,b,b,c1,d)}}
+const tg=new THREE.BufferGeometry();tg.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));tg.setAttribute('color',new THREE.Float32BufferAttribute(col,3));tg.setIndex(idx);tg.computeVertexNormals();const land=new THREE.Mesh(tg,new THREE.MeshStandardMaterial({vertexColors:true,roughness:1}));land.receiveShadow=false;scene.add(land);
+// airport runway
+const airport=new THREE.Group();airport.position.set(60,3,40);airport.rotation.y=-.18;scene.add(airport);
+airport.add(new THREE.Mesh(new THREE.BoxGeometry(34,.8,370),new THREE.MeshStandardMaterial({color:0x343d47,roughness:.8})));
+const white=new THREE.MeshBasicMaterial({color:0xffffff});
+for(let z=-160;z<=160;z+=35){let m=new THREE.Mesh(new THREE.BoxGeometry(1,.9,17),white);m.position.set(0,.5,z);airport.add(m)}
+for(let x of [-16,16]){let m=new THREE.Mesh(new THREE.BoxGeometry(.8,.9,360),white);m.position.set(x,.5,0);airport.add(m)}
+for(let z=-175;z<=175;z+=20)for(let x of [-20,20]){let l=new THREE.Mesh(new THREE.SphereGeometry(1.4,8,8),new THREE.MeshBasicMaterial({color:0x9df5ff}));l.position.set(x,2,z);airport.add(l)}
+// Segundo aeroporto 3D, com pista, hangares e torre
+function buildAirport(x,z,name){const g=new THREE.Group();g.position.set(x,terrainH(x,z)+3,z);g.rotation.y=.32;scene.add(g);g.add(new THREE.Mesh(new THREE.BoxGeometry(42,.8,330),new THREE.MeshStandardMaterial({color:0x303944})));for(let zz=-145;zz<=145;zz+=32){let st=new THREE.Mesh(new THREE.BoxGeometry(1,.9,15),white);st.position.set(0,.5,zz);g.add(st)}for(let xx of [-20,20]){let edge=new THREE.Mesh(new THREE.BoxGeometry(.7,.9,320),white);edge.position.set(xx,.5,0);g.add(edge)}for(let side of [-1,1]){let hang=new THREE.Mesh(new THREE.BoxGeometry(32,12,25),new THREE.MeshStandardMaterial({color:0xd8e2e8}));hang.position.set(side*48,6,-45);g.add(hang);let roof=new THREE.Mesh(new THREE.BoxGeometry(34,1.5,27),new THREE.MeshStandardMaterial({color:0x2875a8}));roof.position.set(side*48,12.5,-45);g.add(roof)}let tower=new THREE.Mesh(new THREE.BoxGeometry(8,23,8),new THREE.MeshStandardMaterial({color:0xe7e9e8}));tower.position.set(-48,11.5,5);g.add(tower);let cab=new THREE.Mesh(new THREE.BoxGeometry(10,5,10),new THREE.MeshStandardMaterial({color:0x4bb4d6,metalness:.2,roughness:.3}));cab.position.set(-48,25,5);g.add(cab);return g}
+const airport2=buildAirport(-650,-380,'Aeroporto da Serra');
+// Detecta a pista de verdade (retângulo e orientação), não apenas a vizinhança do aeroporto.
+function runwayAt(x,z){
+ const candidates=[{x:60,z:40,angle:-.18,halfW:17,halfL:185,name:'Aeroporto A1'},{x:-650,z:-380,angle:.32,halfW:21,halfL:165,name:'Aeroporto A2'}];
+ for(const r of candidates){const dx=x-r.x,dz=z-r.z;const lx=dx*Math.cos(r.angle)-dz*Math.sin(r.angle),lz=dx*Math.sin(r.angle)+dz*Math.cos(r.angle);if(Math.abs(lx)<r.halfW&&Math.abs(lz)<r.halfL)return { ...r, lx, lz, surface:5.35 };}
+ return null;
+}
+// Letreiros dos aeroportos no cenário
+// trees
+const trunkMat=new THREE.MeshStandardMaterial({color:0x67432a}),leafMat=new THREE.MeshStandardMaterial({color:0x236d3b});
+for(let i=0;i<85;i++){let x=(Math.random()-.5)*1750,z=(Math.random()-.5)*1750,y=terrainH(x,z);if(y<1||Math.hypot(x-60,z-40)<275||Math.hypot(x+650,z+380)<275)continue;let h=5+Math.random()*12,g=new THREE.Group();let t=new THREE.Mesh(new THREE.CylinderGeometry(.6,1,h*.55,5),trunkMat);t.position.y=h*.275;g.add(t);let c=new THREE.Mesh(new THREE.ConeGeometry(h*.28,h*.8,6),leafMat);c.position.y=h*.75;g.add(c);g.position.set(x,y,z);scene.add(g)}
+// GRAND PLANE: pequena cidade com ruas, casas, comércio, carros e pedestres animados.
+const townCars=[], townWalkers=[];
+const townX=405,townZ=260, roadMat=new THREE.MeshStandardMaterial({color:0x343b43,roughness:1}), sidewalkMat=new THREE.MeshStandardMaterial({color:0xb9b7aa,roughness:1});
+function townBox(parent,w,h,d,mat,x,y,z){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);parent.add(m);return m;}
+// Ruas em quadras com faixas centrais e calçadas
+const roadXs=[240,330,510,600], roadZs=[100,190,370,460];
+for(const x of roadXs){townBox(scene,12,.35,390,roadMat,x,.25,280);townBox(scene,1.2,.38,390,sidewalkMat,x-7,.27,280);townBox(scene,1.2,.38,390,sidewalkMat,x+7,.27,280);for(let z=105;z<455;z+=23)townBox(scene,.35,.38,8,new THREE.MeshBasicMaterial({color:0xe8dfb8}),x,.45,z);}
+for(const z of roadZs){townBox(scene,420,.35,12,roadMat,420,.25,z);townBox(scene,420,.38,1.2,sidewalkMat,420,.27,z-7);townBox(scene,420,.38,1.2,sidewalkMat,420,.27,z+7);for(let x=220;x<620;x+=23)townBox(scene,8,.38,.35,new THREE.MeshBasicMaterial({color:0xe8dfb8}),x,.45,z);}
+// Rua circular em quadra ao redor da praça central — sem cortar o parque.
+const ringRoadXs=[365,475], ringRoadZs=[220,340];
+for(const x of ringRoadXs){
+ townBox(scene,10,.38,120,roadMat,x,.28,280);
+ townBox(scene,1,.4,120,sidewalkMat,x-6,.3,280);
+ townBox(scene,1,.4,120,sidewalkMat,x+6,.3,280);
+}
+for(const z of ringRoadZs){
+ townBox(scene,110,.38,10,roadMat,420,.28,z);
+ townBox(scene,110,.4,1,sidewalkMat,420,.3,z-6);
+ townBox(scene,110,.4,1,sidewalkMat,420,.3,z+6);
+}
+for(let z=230;z<335;z+=22){
+ for(const x of ringRoadXs) townBox(scene,.3,.4,7,new THREE.MeshBasicMaterial({color:0xe8dfb8}),x,.49,z);
+}
+for(let x=375;x<470;x+=22){
+ for(const z of ringRoadZs) townBox(scene,7,.4,.3,new THREE.MeshBasicMaterial({color:0xe8dfb8}),x,.49,z);
+}
+// Casas coloridas e pequenos comércios em lotes entre as ruas
+const houseColors=[0xf0d2a2,0xd8e8ef,0xe6b5a8,0xc9dfb1,0xf2e7c7,0xd2c5e8,0xe8d6b7];
+for(let ix=0;ix<4;ix++)for(let iz=0;iz<4;iz++){
+ const x=285+ix*90,z=145+iz*90, y=terrainH(x,z);if(Math.hypot(x-405,z-260)>290)continue;
+ // Mantém lotes livres ao redor dos comércios, da praça e das ruas.
+ const keepClear=[[270,145],[550,235],[360,415],[280,420],[565,145],[420,280]];
+ if(keepClear.some(([bx,bz])=>Math.hypot(x-bx,z-bz)<42))continue;
+ if((Math.abs(x-365)<25||Math.abs(x-475)<25)&&z>205&&z<355)continue;
+ if((Math.abs(z-220)<23||Math.abs(z-340)<23)&&x>345&&x<495)continue;
+ const w=26+(ix+iz)%3*4,d=25+(ix*2+iz)%3*4,h=10+(ix+iz)%4*2;
+ const wall=new THREE.MeshStandardMaterial({color:houseColors[(ix*3+iz)%houseColors.length],roughness:.9});
+ const g=new THREE.Group();townBox(g,w,h,d,wall,0,h/2,0);
+ const roofMat=new THREE.MeshStandardMaterial({color:[0x994b3b,0x4c5965,0x7b4d38,0x3b765a][(ix+iz)%4],roughness:1});
+ const roof=townBox(g,w+3,1.5,d+3,roofMat,0,h+.6,0);roof.rotation.z=(ix%2?-.08:.08);
+ townBox(g,4,5,.5,new THREE.MeshStandardMaterial({color:0x6a9db4}),-w*.25,3,h/2+.2);
+ townBox(g,4,5,.5,new THREE.MeshStandardMaterial({color:0x6a9db4}),w*.25,3,h/2+.2);
+ townBox(g,4,6,.7,new THREE.MeshStandardMaterial({color:0x72503b}),0,3,d/2+.25);
+ g.position.set(x,y+.45,z);scene.add(g);
+ // árvore de rua
+ if((ix+iz)%2===0){const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.6,.8,4,6),trunkMat);trunk.position.set(x+20,y+2,z+14);scene.add(trunk);const crown=new THREE.Mesh(new THREE.SphereGeometry(3.4,8,7),leafMat);crown.position.set(x+20,y+5.4,z+14);scene.add(crown);}
+}
+// Praça central com gramado, bancos e árvores
+const park=new THREE.Mesh(new THREE.BoxGeometry(45,.5,45),new THREE.MeshStandardMaterial({color:0x5ca65a}));park.position.set(420,.45,280);scene.add(park);
+for(const [x,z] of [[405,265],[435,265],[405,295],[435,295]]){const tr=new THREE.Mesh(new THREE.CylinderGeometry(.7,.9,5,6),trunkMat);tr.position.set(x,3,z);scene.add(tr);const lf=new THREE.Mesh(new THREE.SphereGeometry(4,9,8),leafMat);lf.position.set(x,6.5,z);scene.add(lf)}
+// Veículos simples com carroceria, teto e rodas
+const carColors=[0xe84c3d,0xf1f3f4,0x2878c8,0xf2c744,0x4d5964,0x39a66b];
+function makeCar(color){const g=new THREE.Group();townBox(g,4.4,1.5,7,new THREE.MeshStandardMaterial({color,metalness:.12,roughness:.45}),0,1,0);townBox(g,3.2,1.35,3.5,new THREE.MeshStandardMaterial({color:0x9bc7d8,metalness:.25,roughness:.25}),0,2.1,-.25);for(const x of [-2.1,2.1])for(const z of [-2.2,2.2]){const wh=new THREE.Mesh(new THREE.CylinderGeometry(.65,.65,.35,10),new THREE.MeshStandardMaterial({color:0x202327}));wh.rotation.z=Math.PI/2;wh.position.set(x,.65,z);g.add(wh)}return g;}
+for(let i=0;i<8;i++){const car=makeCar(carColors[i%carColors.length]);scene.add(car);townCars.push({mesh:car,phase:i/8,route:i%2});}
+// Pedestres coloridos que caminham pelas calçadas
+const personMats=[0x3d70b5,0xd9534f,0xf0bd39,0xeeeeee,0x6b4d9a,0x2c9970].map(c=>new THREE.MeshStandardMaterial({color:c}));
+for(let i=0;i<14;i++){const g=new THREE.Group();const shirt=personMats[i%personMats.length];const body=new THREE.Mesh(new THREE.CylinderGeometry(.65,.8,2.3,7),shirt);body.position.y=2.1;g.add(body);const head=new THREE.Mesh(new THREE.SphereGeometry(.72,8,7),new THREE.MeshStandardMaterial({color:0xd8a77c}));head.position.y=3.7;g.add(head);const legMat=new THREE.MeshStandardMaterial({color:0x303847});for(const dx of [-.35,.35]){const leg=new THREE.Mesh(new THREE.BoxGeometry(.3,1.5,.35),legMat);leg.position.set(dx,.75,0);g.add(leg)}scene.add(g);townWalkers.push({mesh:g,phase:i/14,baseX:222+(i%7)*62,baseZ:112+Math.floor(i/7)*315});}
+// MEGA GRAND PLANE: rodovia, comércio, postos e ciclistas.
+const highwayCars=[], cyclists=[];
+const highwayMat=new THREE.MeshStandardMaterial({color:0x292f35,roughness:1});
+const shoulderMat=new THREE.MeshStandardMaterial({color:0x8a8e8a,roughness:1});
+const highwayLine=new THREE.MeshBasicMaterial({color:0xf6f1d7});
+// Rodovia longa em segmentos que acompanham o relevo.
+for(let z=-100;z<1390;z+=24){
+ const zz=z+12, y=terrainH(760,zz)+.38;
+ townBox(scene,30,.5,24,highwayMat,760,y,zz);
+ townBox(scene,1.1,.52,24,shoulderMat,744.7,y+.03,zz);
+ townBox(scene,1.1,.52,24,shoulderMat,775.3,y+.03,zz);
+ if(Math.floor((z+100)/24)%2===0){townBox(scene,.38,.54,11,highwayLine,760,y+.04,zz);townBox(scene,.28,.54,10,highwayLine,752,y+.04,zz);townBox(scene,.28,.54,10,highwayLine,768,y+.04,zz);}
+}
+// Ligação entre a cidade e a rodovia.
+for(let z=440;z<700;z+=20){const zz=z+10,y=terrainH(680,zz)+.34;townBox(scene,18,.45,20,highwayMat,680,y,zz);}
+function makeBusiness(x,z,label,kind,color){
+ const y=terrainH(x,z),g=new THREE.Group();
+ const isGas=kind==='gas',w=isGas?24:19,d=isGas?23:18,h=isGas?7:8;
+ townBox(g,w,h,d,new THREE.MeshStandardMaterial({color,roughness:.85}),0,h/2,0);
+ townBox(g,w+2,1.2,d+2,new THREE.MeshStandardMaterial({color:isGas?0xdce4e8:0x963f32}),0,h+.5,0);
+ townBox(g,3.2,4,.35,new THREE.MeshStandardMaterial({color:0x514237}),-w*.25,2.2,d/2+.22);
+ for(const dx of [-w*.12,w*.22])townBox(g,3.4,2.8,.3,new THREE.MeshStandardMaterial({color:0x8ed1e7,metalness:.1,roughness:.25}),dx,4,d/2+.25);
+ const cv=document.createElement('canvas');cv.width=512;cv.height=128;const ctx=cv.getContext('2d');
+ ctx.fillStyle=isGas?'#d72635':kind==='restaurant'?'#245b43':'#e58b25';ctx.fillRect(0,0,512,128);ctx.fillStyle='#fff';ctx.font='bold 40px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(label,256,64);
+ const texture=new THREE.CanvasTexture(cv);const sign=new THREE.Mesh(new THREE.PlaneGeometry(w+2,4.5),new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide}));sign.position.set(0,h-1,d/2+.48);g.add(sign);
+ if(isGas){for(const dx of [-7,7]){townBox(g,3.3,2.2,3.3,new THREE.MeshStandardMaterial({color:0xf4f4f4}),dx,1.3,-d*.15);townBox(g,3.4,.3,3.4,new THREE.MeshStandardMaterial({color:0xd72635}),dx,2.5,-d*.15);}}
+ g.position.set(x,y+.35,z);scene.add(g);return g;
+}
+// Três lanchonetes na cidade.
+makeBusiness(270,145,'LANCHES DO ZE','snack',0xf0c86e);
+makeBusiness(550,235,'BURGER DA PRACA','snack',0xe9aa62);
+makeBusiness(360,415,'PASTELARIA','snack',0xf2d8a8);
+// Dois restaurantes na rodovia.
+makeBusiness(805,245,'RESTAURANTE KM 1','restaurant',0xd8bd94);
+makeBusiness(805,1050,'RESTAURANTE KM 2','restaurant',0xd8bd94);
+// Dois postos na cidade e dois na rodovia.
+makeBusiness(280,420,'POSTO CENTRAL','gas',0xdce6eb);
+makeBusiness(565,145,'POSTO DA CIDADE','gas',0xdce6eb);
+makeBusiness(805,475,'POSTO ROTA 1','gas',0xdce6eb);
+makeBusiness(805,800,'POSTO ROTA 2','gas',0xdce6eb);
+// Carros circulando em ambas as direções na rodovia.
+for(let i=0;i<12;i++){const car=makeCar(carColors[(i+1)%carColors.length]);scene.add(car);highwayCars.push({mesh:car,phase:i/12,lane:i%2});}
+// Ciclistas reconhecíveis: duas rodas, quadro, corpo e capacete.
+function makeCyclist(color){
+ const g=new THREE.Group(),dark=new THREE.MeshStandardMaterial({color:0x20252b}),frame=new THREE.MeshStandardMaterial({color,metalness:.2,roughness:.5});
+ for(const x of [-1.05,1.05]){const wheel=new THREE.Mesh(new THREE.TorusGeometry(.68,.075,7,16),dark);wheel.position.set(x,.72,0);wheel.rotation.y=Math.PI/2;g.add(wheel);}
+ function bar(a,b,r=.055){const av=new THREE.Vector3(...a),bv=new THREE.Vector3(...b),d=bv.clone().sub(av);const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,d.length(),6),frame);m.position.copy(av.add(bv).multiplyScalar(.5));m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());g.add(m);}
+ bar([-1.05,.72,0],[0,.72,0]);bar([0,.72,0],[-.22,1.35,0]);bar([-1.05,.72,0],[-.22,1.35,0]);bar([-.22,1.35,0],[.25,1.35,0]);
+ const body=new THREE.Mesh(new THREE.CylinderGeometry(.25,.34,.9,7),new THREE.MeshStandardMaterial({color}));body.position.set(-.12,1.95,0);body.rotation.z=-.2;g.add(body);
+ const head=new THREE.Mesh(new THREE.SphereGeometry(.23,8,7),new THREE.MeshStandardMaterial({color:0xd6a078}));head.position.set(.05,2.55,0);g.add(head);
+ const helmet=new THREE.Mesh(new THREE.SphereGeometry(.26,8,7),new THREE.MeshStandardMaterial({color:0xf0c735}));helmet.position.set(.05,2.72,0);g.add(helmet);
+ bar([-.1,1.7,0],[-.72,1.05,0],.075);bar([-.1,1.7,0],[.55,1.05,0],.075);return g;
+}
+for(let i=0;i<10;i++){const bike=makeCyclist([0x2f8cde,0xe75a4c,0x37a56b,0xe7a62d,0x8c62b7][i%5]);scene.add(bike);cyclists.push({mesh:bike,phase:i/10,route:i%2});}
 
-// Aeroporto e pista
-box(-180,0,-100,180,0.3,25,0x292e33);
-for(let i=-255;i<-105;i+=20)
- box(i,0.2,-100,9,0.04,1,0xffffff);
+// clouds
+const cloudMat=new THREE.MeshStandardMaterial({color:0xffffff,roughness:1});
+for(let i=0;i<18;i++){let g=new THREE.Group();for(let j=0;j<4;j++){let p=new THREE.Mesh(new THREE.SphereGeometry(13+Math.random()*17,9,7),cloudMat);p.position.set((Math.random()-.5)*42,Math.random()*10,(Math.random()-.5)*24);p.scale.y=.55;g.add(p)}g.position.set((Math.random()-.5)*3300,180+Math.random()*450,(Math.random()-.5)*3300);scene.add(g)}
+// plane model: its nose points toward local -Z
+const plane=new THREE.Group();scene.add(plane);
+const bodyMat=new THREE.MeshStandardMaterial({color:0xf2f4f6,metalness:.25,roughness:.35}),blueMat=new THREE.MeshStandardMaterial({color:0x087bc0,metalness:.2,roughness:.35}),glassMat=new THREE.MeshStandardMaterial({color:0x173a56,metalness:.5,roughness:.18});
+function addMesh(parent,geo,mat,x,y,z,sx=1,sy=1,sz=1){let m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);m.scale.set(sx,sy,sz);parent.add(m);m.castShadow=true;return m}
+addMesh(plane,new THREE.CylinderGeometry(1.2,1.8,12,12),bodyMat,0,0,0,1,1,1).rotation.x=Math.PI/2;
+addMesh(plane,new THREE.ConeGeometry(1.2,3.5,12),blueMat,0,0,-7).rotation.x=-Math.PI/2;
+addMesh(plane,new THREE.BoxGeometry(19,.35,3.5),blueMat,0,.1,0);
+addMesh(plane,new THREE.BoxGeometry(5,.25,2.2),blueMat,0,.2,5.4);
+addMesh(plane,new THREE.BoxGeometry(.35,3,2.2),blueMat,0,1.1,5.2);
+addMesh(plane,new THREE.SphereGeometry(1.35,14,10),glassMat,0,1,-1.6,1,.65,1.25);
+// Peças internas separadas: ficam visíveis somente na câmera do cockpit.
+const cockpitGroup=new THREE.Group();plane.add(cockpitGroup);cockpitGroup.visible=false;
+// Painel do cockpit para a câmera em primeira pessoa.
+const dashMat=new THREE.MeshStandardMaterial({color:0x202b34,roughness:.75}),screenMat=new THREE.MeshBasicMaterial({color:0x36d8b4});
+addMesh(cockpitGroup,new THREE.BoxGeometry(8,.65,1.4),dashMat,0,1.25,-3.8);
+for(let i=0;i<5;i++){const dial=addMesh(cockpitGroup,new THREE.CylinderGeometry(.32,.32,.08,16),new THREE.MeshStandardMaterial({color:0x101820}),-2.8+i*1.4,1.65,-3.9);dial.rotation.x=Math.PI/2;addMesh(cockpitGroup,new THREE.BoxGeometry(.07,.35,.08),screenMat,-2.8+i*1.4,1.65,-4.0);}
+addMesh(cockpitGroup,new THREE.BoxGeometry(1.4,.08,.7),blueMat,0,1.05,-2.9);
+// Moldura do para-brisa e controles adicionais para uma cabine mais realista.
+const cockpitMetal=new THREE.MeshStandardMaterial({color:0x17232c,metalness:.35,roughness:.55});
+addMesh(cockpitGroup,new THREE.BoxGeometry(.16,2.7,.18),cockpitMetal,-3.9,2.45,-5.0);
+addMesh(cockpitGroup,new THREE.BoxGeometry(.16,2.7,.18),cockpitMetal,3.9,2.45,-5.0);
+addMesh(cockpitGroup,new THREE.BoxGeometry(7.9,.16,.18),cockpitMetal,0,3.78,-5.0);
+addMesh(cockpitGroup,new THREE.BoxGeometry(.14,1.8,.18),cockpitMetal,0,2.8,-5.0);
+for(let i=0;i<3;i++){addMesh(cockpitGroup,new THREE.BoxGeometry(.95,.65,.1),new THREE.MeshStandardMaterial({color:0x101820}),-1.6+i*1.6,1.82,-4.72);addMesh(cockpitGroup,new THREE.BoxGeometry(.62,.035,.05),new THREE.MeshBasicMaterial({color:[0x35e2b2,0xffcf54,0x72baff][i]}),-1.6+i*1.6,1.88,-4.79);}
+const yoke=new THREE.Group();yoke.position.set(0,1.25,-2.25);cockpitGroup.add(yoke);
+const yokeRing=new THREE.Mesh(new THREE.TorusGeometry(.58,.075,8,24),cockpitMetal);yokeRing.position.y=.38;yoke.add(yokeRing);
+addMesh(yoke,new THREE.CylinderGeometry(.09,.13,.72,8),cockpitMetal,0,.02,0);
 
-// Cidade
-for(let x=40;x<230;x+=32){
- for(let z=-190;z<200;z+=35){
-  if(Math.abs(z)<22 || Math.abs(x-125)<20) continue;
-  let h=8+Math.random()*22;
-  box(x,h/2,z,16,h,17,
-    [0xc9b89a,0xe3d8bd,0xb8c8d2,0xd5aa82][Math.floor(Math.random()*4)]);
-  box(x,h+1,z,17,2,18,0x754e3c);
+const prop=new THREE.Group();prop.position.z=-8.6;plane.add(prop);
+for(let a=0;a<2;a++){let b=addMesh(prop,new THREE.BoxGeometry(.25,5,.18),blueMat,0,0,0);b.rotation.z=a*Math.PI/2}
+const gearGroup=new THREE.Group();plane.add(gearGroup);const wheels=[];for(let x of [-1.35,1.35]){let leg=addMesh(gearGroup,new THREE.CylinderGeometry(.12,.16,1.8,8),new THREE.MeshStandardMaterial({color:0x8b969e,metalness:.6}),x,-1.05,.1);leg.rotation.z=x<0?-.18:.18;let w=addMesh(gearGroup,new THREE.CylinderGeometry(.42,.42,.28,14),new THREE.MeshStandardMaterial({color:0x20242a,roughness:.9}),x,-1.95,.1);w.rotation.z=Math.PI/2;wheels.push(w)}let noseLeg=addMesh(gearGroup,new THREE.CylinderGeometry(.12,.14,1.6,8),new THREE.MeshStandardMaterial({color:0x8b969e,metalness:.6}),0,-.95,-4.8);let noseWheel=addMesh(gearGroup,new THREE.CylinderGeometry(.32,.32,.24,12),new THREE.MeshStandardMaterial({color:0x20242a}),0,-1.75,-4.8);noseWheel.rotation.z=Math.PI/2;gearGroup.visible=false;let gearDown=false;
+// simple scenery islands around map
+for(let i=0;i<8;i++){let x=(i%4-1.5)*600+Math.sin(i*4)*80,z=(Math.floor(i/4)-.5)*720+Math.cos(i*3)*100;let isl=new THREE.Mesh(new THREE.CylinderGeometry(100+Math.random()*50,160,24,32),new THREE.MeshStandardMaterial({color:0x4b9452}));isl.position.set(x,-3,z);isl.scale.y=.5;scene.add(isl)}
+// Áudio criado pelo navegador: motor, vento e alertas, sem arquivos extras.
+let audioCtx=null, engineOsc=null, engineOsc2=null, engineGain=null, windOsc=null, windGain=null, soundOn=true;
+function initAudio(){
+ if(!soundOn)return;
+ try{
+  if(!audioCtx){audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+   engineOsc=audioCtx.createOscillator();engineOsc.type='sawtooth';
+   engineOsc2=audioCtx.createOscillator();engineOsc2.type='triangle';
+   const engineFilter=audioCtx.createBiquadFilter();engineFilter.type='lowpass';engineFilter.frequency.value=420;
+   engineGain=audioCtx.createGain();engineGain.gain.value=.0001;
+   engineOsc.connect(engineFilter);engineOsc2.connect(engineFilter);engineFilter.connect(engineGain);engineGain.connect(audioCtx.destination);
+   windOsc=audioCtx.createOscillator();windOsc.type='sine';const windFilter=audioCtx.createBiquadFilter();windFilter.type='lowpass';windFilter.frequency.value=180;
+   windGain=audioCtx.createGain();windGain.gain.value=.0001;windOsc.connect(windFilter);windFilter.connect(windGain);windGain.connect(audioCtx.destination);
+   engineOsc.start();engineOsc2.start();windOsc.start();
+  }
+  if(audioCtx.state==='suspended')audioCtx.resume();
+ }catch(e){console.warn('Áudio indisponível neste navegador',e)}
+}
+function updateAudio(){if(!audioCtx||!soundOn||!engineGain)return;const now=audioCtx.currentTime;const active=started&&!crashed;engineOsc.frequency.setTargetAtTime(48+speed*.72,now,.12);engineOsc2.frequency.setTargetAtTime(25+speed*.38,now,.12);engineGain.gain.setTargetAtTime(active?.025+speed/360*.035:.0001,now,.18);windOsc.frequency.setTargetAtTime(35+speed*.55,now,.15);windGain.gain.setTargetAtTime(active?Math.min(.025,speed/360*.025):.0001,now,.2)}
+function soundEffect(kind){if(!soundOn)return;initAudio();if(!audioCtx)return;try{const o=audioCtx.createOscillator(),g=audioCtx.createGain(),now=audioCtx.currentTime;o.connect(g);g.connect(audioCtx.destination);if(kind==='crash'){o.type='sawtooth';o.frequency.setValueAtTime(150,now);o.frequency.exponentialRampToValueAtTime(35,now+.55);g.gain.setValueAtTime(.16,now);g.gain.exponentialRampToValueAtTime(.001,now+.6);o.start(now);o.stop(now+.62)}else{o.type='sine';o.frequency.setValueAtTime(520,now);o.frequency.setValueAtTime(760,now+.13);g.gain.setValueAtTime(.09,now);g.gain.exponentialRampToValueAtTime(.001,now+.38);o.start(now);o.stop(now+.4)}}catch(e){}}
+$('soundBtn').onclick=()=>{soundOn=!soundOn;$('soundBtn').textContent=soundOn?'🔊 SOM: LIGADO':'🔇 SOM: DESLIGADO';if(soundOn)initAudio();if(audioCtx&&engineGain){const now=audioCtx.currentTime;engineGain.gain.setTargetAtTime(.0001,now,.05);windGain.gain.setTargetAtTime(.0001,now,.05)}};
+let started=false,speed=0,heading=0,pitch=0,roll=0,altitude=280,crashed=false,crashTimer=0,grounded=false;const velocity=new THREE.Vector3();
+let viewMode='external',onFoot=false,footHeading=0;const footPos=new THREE.Vector3();
+function setModeLabel(){ $('modeLabel').textContent=onFoot?'A PÉ · W/S ANDAR · ←/→ VIRAR':(viewMode==='cockpit'?'COCKPIT · VISÃO DO PILOTO':'CÂMERA EXTERNA');$('cockpitBtn').textContent=viewMode==='cockpit'?'C · CÂMERA EXTERNA':'C · COCKPIT';$('exitBtn').textContent=onFoot?'E · ENTRAR NO AVIÃO':'E · SAIR DO AVIÃO';}
+function toggleCockpit(){if(onFoot)return;viewMode=viewMode==='cockpit'?'external':'cockpit';cockpitGroup.visible=viewMode==='cockpit';setModeLabel();}
+function toggleFoot(){if(!started||crashed)return;if(!onFoot){const ground=terrainH(plane.position.x,plane.position.z)+2.1;if(!grounded&&plane.position.y>ground+12){$('msg').innerHTML='🛑 POUSE PRIMEIRO<small>Você só pode sair do avião quando estiver no chão</small>';return;}onFoot=true;viewMode='external';cockpitGroup.visible=false;footHeading=heading;footPos.set(plane.position.x+Math.cos(heading)*7,terrainH(plane.position.x+Math.cos(heading)*7,plane.position.z+Math.sin(heading)*7)+2,plane.position.z+Math.sin(heading)*7);$('msg').innerHTML='🚶 VOCÊ SAIU DO AVIÃO<small>W/S anda · A/D anda de lado · setas esquerda/direita viram · E volta perto do avião</small>';}else{if(Math.hypot(footPos.x-plane.position.x,footPos.z-plane.position.z)>24){$('msg').innerHTML='✈️ CHEGUE MAIS PERTO<small>Aproxime-se do avião para entrar novamente</small>';return;}onFoot=false;viewMode='external';cockpitGroup.visible=false;$('msg').innerHTML='✈️ VOCÊ ENTROU NO AVIÃO<small>C muda para o cockpit · W acelera · setas pilotam</small>';}setModeLabel();}
+$('cockpitBtn').onclick=toggleCockpit;$('exitBtn').onclick=toggleFoot;
+const keys={};addEventListener('keydown',e=>{if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code))e.preventDefault();if(!keys[e.code]&&e.code==='KeyG'&&!onFoot){gearDown=!gearDown;gearGroup.visible=gearDown;$('msg').innerHTML=gearDown?'TREM DE POUSO BAIXADO<small>Prepare-se para pousar</small>':'TREM DE POUSO RECOLHIDO<small>Voo livre</small>'}if(!keys[e.code]&&e.code==='KeyC')toggleCockpit();if(!keys[e.code]&&e.code==='KeyE')toggleFoot();keys[e.code]=true;if(e.code==='KeyR')reset()});addEventListener('keyup',e=>keys[e.code]=false);
+// Efeitos leves, gerados localmente: fumaça, poeira, marcas de pneus e fogo.
+const effects=[];let fireParts=[];let fireOrigin=null;
+const blackMarkMat=new THREE.MeshBasicMaterial({color:0x17191b,roughness:1,side:THREE.DoubleSide});
+const brownMarkMat=new THREE.MeshBasicMaterial({color:0x65452b,roughness:1,side:THREE.DoubleSide});
+function addTireMarks(type,x,z,angle,surface){
+ const mat=type==='runway'?blackMarkMat:brownMarkMat;
+ for(let side of [-1,1]){const mark=new THREE.Mesh(new THREE.PlaneGeometry(type==='runway'?0.48:0.7,type==='runway'?7:5),mat);mark.rotation.x=-Math.PI/2;mark.rotation.z=angle;mark.position.set(x+Math.cos(angle)*side*.9,surface+.035,z-Math.sin(angle)*side*.9);scene.add(mark);}
+}
+function puffBurst(kind,x,y,z,count=10){
+ for(let i=0;i<count;i++){const radius=kind==='smoke'?1.1+Math.random()*1.8:1.5+Math.random()*2.5;const mat=new THREE.MeshBasicMaterial({color:kind==='dust'?0xb18a5a:0xd7dce0,transparent:true,opacity:kind==='dust'?.62:.48,depthWrite:false});const mesh=new THREE.Mesh(new THREE.SphereGeometry(radius,7,6),mat);mesh.position.set(x+(Math.random()-.5)*3,y+Math.random()*2,z+(Math.random()-.5)*3);scene.add(mesh);effects.push({mesh,kind,life:0,maxLife:kind==='dust'?1.1:1.7,vx:(Math.random()-.5)*4,vy:kind==='dust'?2+Math.random()*3:1+Math.random()*2,vz:(Math.random()-.5)*4,base:radius});}
+}
+function startCrashFire(x,y,z){if(fireParts.length)return;fireOrigin={x,y,z};for(let i=0;i<9;i++){const mat=new THREE.MeshBasicMaterial({color:i%3===0?0xffe45a:i%3===1?0xff7a18:0xd9270b,transparent:true,opacity:.9,depthWrite:false});const mesh=new THREE.Mesh(new THREE.SphereGeometry(1.3+Math.random()*1.4,8,7),mat);mesh.position.set(x+(Math.random()-.5)*4,y+1+Math.random()*3,z+(Math.random()-.5)*4);scene.add(mesh);fireParts.push({mesh,phase:Math.random()*6.28,base:1+Math.random()*.8});}puffBurst('smoke',x,y+3,z,8);}
+function updateEffects(dt){for(let i=effects.length-1;i>=0;i--){const e=effects[i];e.life+=dt;e.mesh.position.x+=e.vx*dt;e.mesh.position.y+=e.vy*dt;e.mesh.position.z+=e.vz*dt;e.mesh.scale.setScalar(1+e.life*1.1);e.mesh.material.opacity=Math.max(0,(1-e.life/e.maxLife)*(e.kind==='dust'?.62:.48));if(e.life>=e.maxLife){scene.remove(e.mesh);e.mesh.geometry.dispose();e.mesh.material.dispose();effects.splice(i,1)}}if(fireParts.length){for(const f of fireParts){f.phase+=dt*9;f.mesh.scale.set(f.base*(.8+Math.sin(f.phase)*.22),f.base*(1.2+Math.sin(f.phase)*.35),f.base*(.8+Math.cos(f.phase)*.2));f.mesh.position.y=fireOrigin.y+2+Math.abs(Math.sin(f.phase))*2;}if(Math.random()<dt*3)puffBurst('smoke',fireOrigin.x,fireOrigin.y+4,fireOrigin.z,2)}}
+function reset(){onFoot=false;viewMode='external';cockpitGroup.visible=false;setModeLabel();for(const f of fireParts){scene.remove(f.mesh);f.mesh.geometry.dispose();f.mesh.material.dispose()}fireParts=[];fireOrigin=null;for(const e of effects){scene.remove(e.mesh);e.mesh.geometry.dispose();e.mesh.material.dispose()}effects.length=0;plane.position.set(0,280,240);heading=0;pitch=0;roll=0;speed=115;velocity.set(0,0,0);crashed=false;crashTimer=0;grounded=false;gearDown=false;gearGroup.visible=false;plane.visible=true;$('msg').innerHTML='VOO INICIADO NO CÉU<small>G baixa o trem · assistência de pouso ativa perto do chão · pista é mais fácil que planície</small>'}
+reset();$('start').onclick=()=>{$('cover').style.display='none';started=true;initAudio();};
+const map=$('map'),ctx=map.getContext('2d');
+function drawMap(){ctx.clearRect(0,0,300,300);ctx.fillStyle='#117ca4';ctx.fillRect(0,0,300,300);ctx.save();ctx.translate(150,150);const scale=.075;ctx.fillStyle='#508d50';ctx.beginPath();ctx.ellipse(0,0,88,78,-.2,0,Math.PI*2);ctx.fill();ctx.fillStyle='#75a75c';ctx.beginPath();ctx.ellipse(-24,-18,43,30,.5,0,Math.PI*2);ctx.fill();ctx.fillStyle='#303944';ctx.fillRect((60-plane.position.x)*scale-3,(40-plane.position.z)*scale-18,6,36);ctx.fillRect((-650-plane.position.x)*scale-3,(-380-plane.position.z)*scale-16,6,32);ctx.fillStyle='#fff';ctx.font='bold 10px Arial';ctx.fillText('A1',(60-plane.position.x)*scale+6,(40-plane.position.z)*scale);ctx.fillText('A2',(-650-plane.position.x)*scale+6,(-380-plane.position.z)*scale);ctx.rotate(-heading);ctx.fillStyle='#ffdf4d';ctx.beginPath();ctx.moveTo(0,-9);ctx.lineTo(6,7);ctx.lineTo(0,4);ctx.lineTo(-6,7);ctx.closePath();ctx.fill();ctx.restore();ctx.strokeStyle='#ffffff55';ctx.lineWidth=1;ctx.beginPath();ctx.arc(150,150,148,0,Math.PI*2);ctx.stroke()}
+function animate(){requestAnimationFrame(animate);let dt=Math.min(clock.getDelta(),.025);if(started){
+ if(onFoot&&!crashed){if(keys.ArrowLeft)footHeading+=dt*1.8;if(keys.ArrowRight)footHeading-=dt*1.8;let move=(keys.KeyW||keys.ArrowUp?1:0)-(keys.KeyS||keys.ArrowDown?1:0);let side=(keys.KeyD?1:0)-(keys.KeyA?1:0);footPos.x+=(-Math.sin(footHeading)*move+Math.cos(footHeading)*side)*dt*24;footPos.z+=(-Math.cos(footHeading)*move-Math.sin(footHeading)*side)*dt*24;footPos.y=terrainH(footPos.x,footPos.z)+2.2;}
+ else if(crashed){crashTimer+=dt;plane.rotation.x+=dt*1.8;plane.rotation.z+=dt*2.4;speed=Math.max(0,speed-110*dt);if(crashTimer>2.2){plane.visible=false;$('msg').innerHTML='🔥💥 ACIDENTE!<small>O avião pegou fogo. Pressione R para reiniciar</small>'} }
+ else if(grounded){
+   speed=Math.max(0,speed-(keys.KeyS?42:8)*dt);if(keys.KeyW)speed+=28*dt;speed=THREE.MathUtils.clamp(speed,0,360);
+   const onRunway=!!runwayAt(plane.position.x,plane.position.z);const groundY=onRunway?5.35:terrainH(plane.position.x,plane.position.z)+2.1;plane.position.x+=-Math.sin(heading)*speed*dt*.32;plane.position.z+=-Math.cos(heading)*speed*dt*.32;plane.position.y=groundY;velocity.y=0;pitch=THREE.MathUtils.lerp(pitch,0,dt*2);plane.rotation.x=pitch;
+   if(speed>92&&keys.ArrowUp){grounded=false;velocity.y=8;pitch=.12;$('msg').innerHTML='🛫 DECOLANDO!<small>Continue acelerando e subindo</small>'}
  }
+ else {
+ if(keys.KeyW)speed+=34*dt;else if(keys.KeyS)speed-=50*dt;else speed-=4*dt;if(keys.Space)speed+=32*dt;speed=THREE.MathUtils.clamp(speed,0,360);
+ if(keys.ArrowLeft||keys.KeyA)heading+=.62*dt*(.45+speed/100);if(keys.ArrowRight||keys.KeyD)heading-=.62*dt*(.45+speed/100);
+ if(keys.ArrowUp)pitch=THREE.MathUtils.lerp(pitch,.32,dt*1.7);else if(keys.ArrowDown)pitch=THREE.MathUtils.lerp(pitch,-.3,dt*1.7);else pitch=THREE.MathUtils.lerp(pitch,0,dt*.55);
+ let targetRoll=keys.KeyA?.55:keys.KeyD?-.55:keys.ArrowLeft?.35:keys.ArrowRight?-.35:0;roll=THREE.MathUtils.lerp(roll,targetRoll,dt*2.1);
+ plane.rotation.order='YXZ';plane.rotation.y=heading;plane.rotation.x=pitch;plane.rotation.z=roll;
+ // Simple flight dynamics: momentum, gravity, lift and drag
+ const forward=new THREE.Vector3(-Math.sin(heading),Math.sin(pitch),-Math.cos(heading));velocity.x=THREE.MathUtils.lerp(velocity.x,forward.x*speed,dt*1.5);velocity.z=THREE.MathUtils.lerp(velocity.z,forward.z*speed,dt*1.5);let lift=Math.max(0,(speed-65)*.018);velocity.y+=(lift-1.7)*dt;velocity.y+=Math.sin(pitch)*speed*.48*dt;velocity.multiplyScalar(1-.018*dt);plane.position.addScaledVector(velocity,dt*.85);
+ const runway=runwayAt(plane.position.x,plane.position.z);const ground=runway?runway.surface:terrainH(plane.position.x,plane.position.z)+2.1;
+ // Assistência de pouso: suaviza a descida e nivela o avião perto do chão.
+ if(plane.position.y<ground+24){
+   velocity.y=Math.max(velocity.y,-13);
+   pitch=THREE.MathUtils.lerp(pitch,0,dt*2.8);
+   roll=THREE.MathUtils.lerp(roll,0,dt*3.2);
+   if(runway&&Math.abs(plane.position.y-ground)<38){const targetHeading=-runway.angle;let diff=((targetHeading-heading+Math.PI*3)%(Math.PI*2))-Math.PI;heading+=diff*Math.min(1,dt*1.5);}
+ }
+ const touching=plane.position.y<ground+7;
+ if(touching&&plane.position.y<=ground){
+   const descent=Math.abs(velocity.y);const aligned=Math.abs(pitch)<.32&&Math.abs(roll)<.55;const runwayAligned=!!runway&&Math.abs(Math.sin(heading+runway.angle))<.48;const runwayLanding=!!runway&&runwayAligned&&aligned&&(gearDown||speed<90)&&speed<215&&descent<58;
+   const plainLanding=!runway&&aligned&&(gearDown||speed<75)&&speed<148&&descent<38;
+   if(runwayLanding||plainLanding){plane.position.y=ground;velocity.y=0;grounded=true;pitch=0;roll=0;plane.rotation.x=0;plane.rotation.z=0;addTireMarks(runwayLanding?'runway':'plain',plane.position.x,plane.position.z,heading,ground);puffBurst(runwayLanding?'smoke':'dust',plane.position.x,ground+1,plane.position.z,runwayLanding?7:13);soundEffect('land');$('msg').innerHTML=runwayLanding?'🛬 POUSO NA PISTA!<small>Marcas pretas nos pneus · fumaça leve · pouso assistido · W acelera, S freia, ↑ decola</small>':'🟤 POUSO NA PLANÍCIE!<small>Pouso irregular · poeira e marcas marrons · tente chegar mais devagar</small>';
+   }else{crashed=true;grounded=false;crashTimer=0;soundEffect('crash');velocity.y=-Math.max(25,descent);startCrashFire(plane.position.x,ground+1,plane.position.z);puffBurst('smoke',plane.position.x,ground+3,plane.position.z,14);$('msg').innerHTML='💥 IMPACTO!<small>O avião caiu e pegou fogo · R para reiniciar</small>';}
+ }
+ if(plane.position.y>3500){plane.position.y=3500;velocity.y=Math.min(velocity.y,0)}
+ if(plane.position.y>ground+25)$('msg').innerHTML='BOM VOO!<small>A1/A2: pistas · assistência ajuda a nivelar o avião perto do chão · G: trem de pouso</small>';
+ }
+ }
+ // Trânsito contínuo nas ruas e pedestres andando nas calçadas.
+const tNow=performance.now()*.001;
+for(const car of townCars){
+ const u=(tNow*.045+car.phase)%1;let x,z,angle;
+ if(car.route===0){
+  // Circuito ao redor da praça central.
+  if(u<.25){x=365+u*4*110;z=220;angle=Math.PI/2}
+  else if(u<.5){x=475;z=220+(u-.25)*4*120;angle=0}
+  else if(u<.75){x=475-(u-.5)*4*110;z=340;angle=-Math.PI/2}
+  else{x=365;z=340-(u-.75)*4*120;angle=Math.PI}
+ }else{
+  // Circuito externo da cidade, sem atravessar o centro.
+  if(u<.25){x=240+u*4*360;z=100;angle=Math.PI/2}
+  else if(u<.5){x=600;z=100+(u-.25)*4*360;angle=0}
+  else if(u<.75){x=600-(u-.5)*4*360;z=460;angle=-Math.PI/2}
+  else{x=240;z=460-(u-.75)*4*360;angle=Math.PI}
+ }
+ car.mesh.position.set(x,terrainH(x,z)+.7,z);car.mesh.rotation.y=angle;
 }
-
-// Floresta de árvores, sem montanhas
-function tree(x,z){
- const trunk=new THREE.Mesh(
-  new THREE.CylinderGeometry(0.6,0.9,5,7),material(0x725034));
- trunk.position.set(x,2.5,z);scene.add(trunk);
- const leaves=new THREE.Mesh(
-  new THREE.ConeGeometry(4+Math.random()*2,10,7),material(0x176b32));
- leaves.position.set(x,8,z);scene.add(leaves);
+for(const car of highwayCars){const u=(tNow*.06+car.phase)%1;const z=-90+u*1450;const x=car.lane===0?753:767;car.mesh.position.set(x,terrainH(x,z)+1,z);car.mesh.rotation.y=car.lane===0?Math.PI:0;}
+for(const b of cyclists){const u=(tNow*.035+b.phase)%1;const z=120+u*340;const x=b.route===0?232:608;b.mesh.position.set(x,terrainH(x,z)+.55,z);b.mesh.rotation.y=b.route===0?Math.PI:0;}
+for(const w of townWalkers){const u=tNow*.32+w.phase*6;w.mesh.position.set(w.baseX+Math.sin(u)*7,terrainH(w.baseX+Math.sin(u)*7,w.baseZ+Math.cos(u*.65)*9)+.45,w.baseZ+Math.cos(u*.65)*9);w.mesh.rotation.y=Math.cos(u*.65)>0?0:Math.PI;}
+updateEffects(dt);updateAudio();altitude=Math.max(0,Math.round(plane.position.y));$('speed').textContent=Math.round(speed);$('alt').textContent=altitude;$('heading').textContent=String(Math.round(((heading*180/Math.PI)%360+360)%360).toString().padStart(3,'0'));
+ if(onFoot){camera.position.lerp(new THREE.Vector3(footPos.x,footPos.y+1.1,footPos.z),.22);camera.lookAt(new THREE.Vector3(footPos.x-Math.sin(footHeading)*20,footPos.y+1,footPos.z-Math.cos(footHeading)*20));}else if(viewMode==='cockpit'){const eye=plane.localToWorld(new THREE.Vector3(0,2.35,1.0));const look=plane.localToWorld(new THREE.Vector3(0,1.9,-28));camera.position.lerp(eye,.35);camera.lookAt(look);}else{const camOffset=new THREE.Vector3(0,7,24).applyEuler(new THREE.Euler(pitch,heading,roll,'YXZ'));let desired=plane.position.clone().add(camOffset);camera.position.lerp(desired,.12);camera.lookAt(plane.position.clone().add(new THREE.Vector3(0,2,-10).applyAxisAngle(new THREE.Vector3(0,1,0),heading)));}
+ prop.rotation.z+=dt*(speed*.18);drawMap();renderer.render(scene,camera)}
+const clock=new THREE.Clock();animate();
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+})();
 }
-for(let i=0;i<650;i++){
- let x=(Math.random()-.5)*1800;
- let z=(Math.random()-.5)*1800;
- if(Math.abs(x)<290 && Math.abs(z)<470)continue;
- tree(x,z);
-}
-
-// Avião
-const plane=new THREE.Group();
-scene.add(plane);
-function part(sx,sy,sz,x,y,z,color){
- const m=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),material(color));
- m.position.set(x,y,z);plane.add(m);return m;
-}
-part(3,2,12,0,0,0,0xe7e9ee);
-part(24,0.45,4,0,0,0,0xd8e2ec);
-part(3,0.35,4,0,0,5,0xe53935);
-part(2,3,2,0,1.8,4,0xeeeeee);
-part(9,0.4,2,0,0,-5,0xd8e2ec);
-plane.position.set(-180,3,-100);
-
-const keys={w:false,s:false,a:false,d:false,space:false};
-function key(e,v){
- const k=e.key.toLowerCase();
- if(k==='w'||k==='arrowup')keys.w=v;
- if(k==='s'||k==='arrowdown')keys.s=v;
- if(k==='a'||k==='arrowleft')keys.a=v;
- if(k==='d'||k==='arrowright')keys.d=v;
- if(e.code==='Space')keys.space=v;
-}
-addEventListener('keydown',e=>key(e,true));
-addEventListener('keyup',e=>key(e,false));
-document.querySelectorAll('#controls button').forEach((b,i)=>{
- const k=['a','w','space','d'][i];
- b.addEventListener('pointerdown',()=>keys[k]=true);
- for(const ev of ['pointerup','pointerleave','pointercancel'])
- b.addEventListener(ev,()=>keys[k]=false);
-});
-
-let speed=0, altitude=3, heading=0;
-const clock=new THREE.Clock();
-function animate(){
- requestAnimationFrame(animate);
- const dt=Math.min(clock.getDelta(),0.04);
- if(keys.w)speed+=30*dt;
- if(keys.s)speed-=45*dt;
- speed=Math.max(0,Math.min(300,speed));
- if(keys.a)heading+=1.0*dt;
- if(keys.d)heading-=1.0*dt;
- if(keys.space && speed>50)altitude+=24*dt;
- else altitude-=8*dt;
- altitude=Math.max(3,Math.min(500,altitude));
-
- plane.rotation.y=heading;
- plane.rotation.z=keys.a?0.3:keys.d?-0.3:0;
- plane.position.x+=Math.sin(heading)*speed*dt*0.22;
- plane.position.z+=Math.cos(heading)*speed*dt*0.22;
- plane.position.y=altitude;
-
- const behind=new THREE.Vector3(
-  plane.position.x-Math.sin(heading)*24,
-  altitude+10,
-  plane.position.z-Math.cos(heading)*24
- );
- camera.position.lerp(behind,0.08);
- camera.lookAt(plane.position.x,altitude,plane.position.z);
-
- document.getElementById('speed').textContent=Math.round(speed);
- document.getElementById('alt').textContent=Math.round(altitude);
- document.getElementById('msg').textContent=
-  altitude>8?'Voando! ✈️':speed>100?'Decolando!':'No solo';
- renderer.render(scene,camera);
-}
-addEventListener('resize',()=>{
- camera.aspect=innerWidth/innerHeight;
- camera.updateProjectionMatrix();
- renderer.setSize(innerWidth,innerHeight);
-});
-animate();
+// O modo leve só é ativado depois de tentar todas as fontes 3D.
+loadThree([
+ "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js",
+ "https://unpkg.com/three@0.160.0/build/three.min.js",
+ "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"
+]);
 </script>
 </body>
 </html>
