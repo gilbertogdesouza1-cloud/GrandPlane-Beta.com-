@@ -1,1 +1,181 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grand Plane BETA</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;overflow:hidden;background:#86c9ff;font-family:Arial}
+#hud{position:fixed;top:12px;left:12px;color:white;
+background:#102536dd;padding:14px;border-radius:12px;
+z-index:2;line-height:1.7}
+#controls{position:fixed;bottom:20px;left:50%;
+transform:translateX(-50%);display:flex;gap:8px;z-index:2}
+button{padding:13px 17px;border:0;border-radius:10px;
+background:#173c53;color:white;font-weight:bold;cursor:pointer}
+button:hover{background:#2478a1}
+#msg{color:#a8f5b4}
+</style>
+</head>
+<body>
+<div id="hud">
+  <b>✈ GRAND PLANE <span style="color:#7dff9a">BETA</span></b><br>
+  Velocidade: <span id="speed">0</span> km/h<br>
+  Altitude: <span id="alt">0</span> m<br>
+  Estado: <span id="msg">Pronto para decolar</span><br>
+  <small>W/S: acelerar e frear · A/D: virar · Espaço: subir</small>
+</div>
+<div id="controls">
+  <button onclick="keys.a=true">◀ VIRAR</button>
+  <button onclick="keys.w=true">ACELERAR</button>
+  <button onclick="keys.space=true">SUBIR</button>
+  <button onclick="keys.d=true">VIRAR ▶</button>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script>
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x86c9ff);
+scene.fog = new THREE.Fog(0x86c9ff, 500, 2400);
 
+const camera = new THREE.PerspectiveCamera(
+  70, innerWidth/innerHeight, 0.1, 3000
+);
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth,innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.shadowMap.enabled = true;
+document.body.appendChild(renderer.domElement);
+
+scene.add(new THREE.HemisphereLight(0xffffff,0x476c36,2));
+const sun = new THREE.DirectionalLight(0xffffff,2);
+sun.position.set(150,300,100);
+scene.add(sun);
+
+function material(color){return new THREE.MeshStandardMaterial({color});}
+function box(x,y,z,sx,sy,sz,color){
+ const m=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),material(color));
+ m.position.set(x,y,z);scene.add(m);return m;
+}
+
+// Mundo completamente plano e verde
+box(0,-2,0,2400,4,2400,0x55a844);
+
+// Estradas
+function road(x,z,w,d){
+ box(x,0,z,w,0.15,d,0x333a40);
+ for(let i=-Math.floor(w/2)+10;i<w/2;i+=22)
+   box(x+i,0.09,z,2,0.03,d,0xffffff);
+}
+road(0,0,22,1100);
+road(250,0,12,800);
+road(125,0,270,12);
+road(250,0,12,800);
+
+// Aeroporto e pista
+box(-180,0,-100,180,0.3,25,0x292e33);
+for(let i=-255;i<-105;i+=20)
+ box(i,0.2,-100,9,0.04,1,0xffffff);
+
+// Cidade
+for(let x=40;x<230;x+=32){
+ for(let z=-190;z<200;z+=35){
+  if(Math.abs(z)<22 || Math.abs(x-125)<20) continue;
+  let h=8+Math.random()*22;
+  box(x,h/2,z,16,h,17,
+    [0xc9b89a,0xe3d8bd,0xb8c8d2,0xd5aa82][Math.floor(Math.random()*4)]);
+  box(x,h+1,z,17,2,18,0x754e3c);
+ }
+}
+
+// Floresta de árvores, sem montanhas
+function tree(x,z){
+ const trunk=new THREE.Mesh(
+  new THREE.CylinderGeometry(0.6,0.9,5,7),material(0x725034));
+ trunk.position.set(x,2.5,z);scene.add(trunk);
+ const leaves=new THREE.Mesh(
+  new THREE.ConeGeometry(4+Math.random()*2,10,7),material(0x176b32));
+ leaves.position.set(x,8,z);scene.add(leaves);
+}
+for(let i=0;i<650;i++){
+ let x=(Math.random()-.5)*1800;
+ let z=(Math.random()-.5)*1800;
+ if(Math.abs(x)<290 && Math.abs(z)<470)continue;
+ tree(x,z);
+}
+
+// Avião
+const plane=new THREE.Group();
+scene.add(plane);
+function part(sx,sy,sz,x,y,z,color){
+ const m=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),material(color));
+ m.position.set(x,y,z);plane.add(m);return m;
+}
+part(3,2,12,0,0,0,0xe7e9ee);
+part(24,0.45,4,0,0,0,0xd8e2ec);
+part(3,0.35,4,0,0,5,0xe53935);
+part(2,3,2,0,1.8,4,0xeeeeee);
+part(9,0.4,2,0,0,-5,0xd8e2ec);
+plane.position.set(-180,3,-100);
+
+const keys={w:false,s:false,a:false,d:false,space:false};
+function key(e,v){
+ const k=e.key.toLowerCase();
+ if(k==='w'||k==='arrowup')keys.w=v;
+ if(k==='s'||k==='arrowdown')keys.s=v;
+ if(k==='a'||k==='arrowleft')keys.a=v;
+ if(k==='d'||k==='arrowright')keys.d=v;
+ if(e.code==='Space')keys.space=v;
+}
+addEventListener('keydown',e=>key(e,true));
+addEventListener('keyup',e=>key(e,false));
+document.querySelectorAll('#controls button').forEach((b,i)=>{
+ const k=['a','w','space','d'][i];
+ b.addEventListener('pointerdown',()=>keys[k]=true);
+ for(const ev of ['pointerup','pointerleave','pointercancel'])
+ b.addEventListener(ev,()=>keys[k]=false);
+});
+
+let speed=0, altitude=3, heading=0;
+const clock=new THREE.Clock();
+function animate(){
+ requestAnimationFrame(animate);
+ const dt=Math.min(clock.getDelta(),0.04);
+ if(keys.w)speed+=30*dt;
+ if(keys.s)speed-=45*dt;
+ speed=Math.max(0,Math.min(300,speed));
+ if(keys.a)heading+=1.0*dt;
+ if(keys.d)heading-=1.0*dt;
+ if(keys.space && speed>50)altitude+=24*dt;
+ else altitude-=8*dt;
+ altitude=Math.max(3,Math.min(500,altitude));
+
+ plane.rotation.y=heading;
+ plane.rotation.z=keys.a?0.3:keys.d?-0.3:0;
+ plane.position.x+=Math.sin(heading)*speed*dt*0.22;
+ plane.position.z+=Math.cos(heading)*speed*dt*0.22;
+ plane.position.y=altitude;
+
+ const behind=new THREE.Vector3(
+  plane.position.x-Math.sin(heading)*24,
+  altitude+10,
+  plane.position.z-Math.cos(heading)*24
+ );
+ camera.position.lerp(behind,0.08);
+ camera.lookAt(plane.position.x,altitude,plane.position.z);
+
+ document.getElementById('speed').textContent=Math.round(speed);
+ document.getElementById('alt').textContent=Math.round(altitude);
+ document.getElementById('msg').textContent=
+  altitude>8?'Voando! ✈️':speed>100?'Decolando!':'No solo';
+ renderer.render(scene,camera);
+}
+addEventListener('resize',()=>{
+ camera.aspect=innerWidth/innerHeight;
+ camera.updateProjectionMatrix();
+ renderer.setSize(innerWidth,innerHeight);
+});
+animate();
+</script>
+</body>
+</html>
